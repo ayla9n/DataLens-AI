@@ -1,0 +1,5 @@
+.env
+.venv/
+clean.ipynb
+.ipynb_checkpoints
+pipeline/__pycache__
