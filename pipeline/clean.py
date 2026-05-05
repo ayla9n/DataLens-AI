@@ -141,7 +141,12 @@ def apply_column_types(df, col_types, date_formats={}):
                     df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
 
                 case "identifier":
-                    df[col] = df[col].astype(str)
+                    if pd.api.types.is_float_dtype(df[col]):
+                        #can convert a null val to float so using -1 as place holder for null vals 
+                        df[col] = df[col].fillna(-1).astype(int).astype(str)
+                        df[col] = df[col].replace("-1", "Unknown")  # restore unknowns
+                    else:
+                        df[col] = df[col].astype(str)
 
                 case "category":
                     df[col] = df[col].astype("category")
