@@ -208,8 +208,8 @@ def handle_missing_values(df):
 
 def remove_outliers(df):
     '''
-    removes extreme values from numeric columns using InterQuartile Range (IQR) methid 
-    values beyond 1.5x the interquartile range above or below is fropped
+    removes extreme values from numeric columns using InterQuartile Range (IQR) method 
+    values beyond 1.5x the interquartile range above or below is dropped
     returns updated df 
     '''
     numeric_cols = df.select_dtypes(include="number").columns
