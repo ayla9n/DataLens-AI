@@ -9,6 +9,47 @@ load_dotenv()
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
+DOMAIN_PROMPTS = {
+    "Sales & Revenue": """
+        You are a senior sales analyst. Focus on:
+        - Revenue trends over time and across regions/segments
+        - Top and bottom performing products or categories
+        - Seasonal patterns in sales data
+        - Actionable recommendations for improving sales performance
+    """,
+
+    "Finance & Accounting": """
+        You are a financial analyst. Focus on:
+        - Key financial metrics and what they indicate
+        - Cost patterns and areas of concern
+        - Period over period comparisons
+        - Risk indicators or anomalies in the numbers
+    """,
+
+    "Marketing & Campaigns": """
+        You are a marketing analyst. Focus on:
+        - Campaign performance and ROI patterns
+        - Audience segments that respond best
+        - Conversion and engagement trends over time
+        - Recommendations for optimizing future campaigns
+    """,
+
+    "Personal Finance": """
+        You are a personal finance advisor. Focus on:
+        - Total spending and average monthly breakdown
+        - Top spending categories and how they trend over time
+        - Unusual spikes or patterns worth flagging
+        - Practical budget recommendations grounded in the numbers
+    """,
+
+    "General / Other": """
+        You are a senior data analyst. Focus on:
+        - Key patterns and trends in the data
+        - Notable statistical findings
+        - Relationships between variables
+        - Actionable recommendations based on the data
+    """
+}
 
 def build_data_summary(df):
     '''
@@ -45,7 +86,7 @@ def build_data_summary(df):
     return summary
 
 
-def generate_insights(df):
+def generate_insights(df, domain="General / Other"):
     '''
     AI generates insights based on sample data and data summary dictionary 
     Returns insights string
@@ -53,7 +94,12 @@ def generate_insights(df):
     print("Building data summary...")
     summary = build_data_summary(df)
 
+    # Get the domain specific instructions
+    # general/ other is default domain
+    domain_context = DOMAIN_PROMPTS.get(domain, DOMAIN_PROMPTS["General / Other"])
+
     prompt = f"""
+    {domain_context}
     You are a senior data analyst presenting findings to a mixed audience 
     of business stakeholders and analysts.
     
@@ -103,7 +149,7 @@ def generate_insights(df):
         return None
 
 
-def generate_dataset_description(df):
+def generate_dataset_description(df, domain="General / Other"):
     '''
     Creates a short summary of the dataset 
     returns AI generated data summary string
@@ -112,7 +158,8 @@ def generate_dataset_description(df):
     columns = list(df.columns)
 
     prompt = f"""
-    Look at these column names and sample rows from a dataset.
+    You are analyzing a {domain} dataset.
+    Look at these column names and sample rows.
     Write ONE sentence describing what this dataset is about.
     Be specific — mention the domain, key metrics, and time period if visible.
     No preamble, just the sentence.
