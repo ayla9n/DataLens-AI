@@ -19,7 +19,8 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 def call_gemini(prompt, temperature=0.3):
     models = [
         "gemini-3-flash-preview", # primary
-        "gemini-2.5-flash",      # fallback
+        "gemini-2.0-flash",
+        "gemini-2.5-flash"     # fallback
     ]
 
     for model in models:
