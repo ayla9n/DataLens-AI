@@ -4,3 +4,4 @@ clean.ipynb
 .ipynb_checkpoints
 pipeline/__pycache__
 AI_Insights/__pycache__
+dashboard/__pycache__

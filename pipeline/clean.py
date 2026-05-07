@@ -1,19 +1,23 @@
 import pandas as pd
-import numpy as np 
+import numpy as np
 from groq import Groq
 import json
 import os
+import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+api_key_ = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
+
+client = Groq(api_key=api_key_)
 
 
 def standardize_columns(df):
     '''
-    cleans column names and removes whitespaces and special chars
-    returns standardized dataframe
+    Cleans column names : strips whitespace, lowercases, replaces spaces
+    with underscores and removes special characters
+    Returns df
     '''
     df.columns = (
         df.columns
@@ -22,16 +26,16 @@ def standardize_columns(df):
         .str.replace(" ", "_", regex=False)
         .str.replace(r"[^a-z0-9_]", "", regex=True)
     )
-    return df 
+    return df
 
 
 def detect_column_types(df):
     '''
-    Sends col names to groq AI with API call to classidy columns and date format
-    returns column classification dictionary and date format dictionary 
+    Sends column names and sample values to Groq AI
+    Returns column classifications and date formats for datetime columns
     '''
     column_info = {}
-    
+
     for col in df.columns:
         sample_values = df[col].dropna().head(5).tolist()
         column_info[col] = sample_values
@@ -86,12 +90,11 @@ def detect_column_types(df):
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}]
         )
-        
+
         raw = response.choices[0].message.content.strip()
         raw = raw.replace("```json", "").replace("```", "")
         result = json.loads(raw)
 
-       #getting both from  response 
         column_types = result.get("column_types", {})
         date_formats = result.get("date_formats", {})
 
@@ -99,11 +102,11 @@ def detect_column_types(df):
         print(f"Date formats: {date_formats}")
 
         return column_types, date_formats
-    
+
     except json.JSONDecodeError:
         print("Warning: AI response could not be parsed as JSON. Skipping AI detection.")
         return {}, {}
-    
+
     except Exception as e:
         print(f"Warning: AI column detection failed: {e}")
         return {}, {}
@@ -111,30 +114,26 @@ def detect_column_types(df):
 
 def apply_column_types(df, col_types, date_formats={}):
     '''
-    Uses AI column classification to dataframe
-    returns updated dataframe 
+    Applies AI column classifications to the dataframe
+    Uses detected date format for datetime columns
+    Returns df
     '''
     for col, dtype in col_types.items():
         if col not in df.columns:
             continue
-        
+
         try:
             match dtype:
                 case "datetime":
-                    fmt = date_formats.get(col)  # get AI detected format for this col
+                    fmt = date_formats.get(col)
                     if fmt:
-                        # Use AI detected format first
                         parsed = pd.to_datetime(df[col], format=fmt, errors="coerce")
                         null_count = parsed.isnull().sum()
-
-                        # If too many NaTs fall back to auto detection
                         if null_count > len(df) * 0.1:
                             print(f"  Format {fmt} had {null_count} NaTs, trying auto...")
                             parsed = pd.to_datetime(df[col], errors="coerce")
-                        
                         df[col] = parsed
                     else:
-                        # No format detected, let pandas figure it out
                         df[col] = pd.to_datetime(df[col], errors="coerce")
 
                 case "year":
@@ -142,9 +141,8 @@ def apply_column_types(df, col_types, date_formats={}):
 
                 case "identifier":
                     if pd.api.types.is_float_dtype(df[col]):
-                        #can convert a null val to float so using -1 as place holder for null vals 
                         df[col] = df[col].fillna(-1).astype(int).astype(str)
-                        df[col] = df[col].replace("-1", "Unknown")  # restore unknowns
+                        df[col] = df[col].replace("-1", "Unknown")
                     else:
                         df[col] = df[col].astype(str)
 
@@ -162,14 +160,14 @@ def apply_column_types(df, col_types, date_formats={}):
 
         except Exception as e:
             print(f"Could not convert column '{col}': {e}")
-    
+
     return df
 
 
 def drop_duplicates(df):
     '''
-    Drops duplicate rows
-    returns updated dataframe
+    Removes exact duplicate rows and prints how many were dropped
+    returns df
     '''
     before = len(df)
     df = df.drop_duplicates()
@@ -177,17 +175,16 @@ def drop_duplicates(df):
     print(f"Removed {before - after} duplicate rows")
     return df
 
-
-def handle_missing_values(df): 
+def handle_missing_values(df):
     '''
-    Fills in missing values based on column types (median for numeric and mode for categorical)
-    returns updated df    
-    ''' 
+    Fills missing values based on column type 
+    returns df
+    '''
     for col in df.columns:
         missing_count = df[col].isnull().sum()
 
         if missing_count == 0:
-            continue  
+            continue
 
         print(f"Filling {missing_count} missing values in '{col}'")
 
@@ -198,58 +195,49 @@ def handle_missing_values(df):
             df[col] = df[col].fillna(df[col].mode()[0])
 
         elif pd.api.types.is_datetime64_any_dtype(df[col]):
-            pass  
+            pass
 
         else:
             df[col] = df[col].fillna("Unknown")
 
-    return df  
-
-
-def remove_outliers(df):
-    '''
-    removes extreme values from numeric columns using InterQuartile Range (IQR) method 
-    values beyond 1.5x the interquartile range above or below is dropped
-    returns updated df 
-    '''
-    numeric_cols = df.select_dtypes(include="number").columns
-
-    for col in numeric_cols:
-        Q1 = df[col].quantile(0.25)
-        Q3 = df[col].quantile(0.75)
-        IQR = Q3 - Q1
-
-        lower_bound = Q1 - 1.5 * IQR
-        upper_bound = Q3 + 1.5 * IQR
-
-        before = len(df)
-        df = df[df[col].between(lower_bound, upper_bound)]
-        after = len(df)
-
-        if before - after > 0:
-            print(f"Outliers removed in '{col}': {before - after} rows")
-
     return df
+
 
 
 def clean_data(filepath):
     '''
-    Main pipeline function 
-    Loads csv and runs cleaning steps 
-    returns cleaned Dataframe  
+    main pipeline — loads CSV, runs all cleaning steps 
+    returns cleaned dataframe with summary
     '''
     print("Loading data...")
-    
+
     if not os.path.exists(filepath):
         print(f"Error: File not found at '{filepath}'")
-        return None
-    
-    df = pd.read_csv(filepath)
-    
+        return None, {}
+
+    # tries UTF-8 first
+    try:
+        df = pd.read_csv(filepath, encoding="utf-8")
+    except UnicodeDecodeError:
+        print("UTF-8 decoding failed, trying latin-1...")
+        try:
+            df = pd.read_csv(filepath, encoding="latin-1")
+        except UnicodeDecodeError:
+            print("latin-1 failed, trying cp1252...")
+            df = pd.read_csv(filepath, encoding="cp1252")
+
     if df.empty:
         print("Error: File is empty")
-        return None
-    
+        return None, {}
+
+    stats = {
+        "original_rows": df.shape[0],
+        "original_cols": df.shape[1],
+        "original_missing": int(df.isnull().sum().sum()),
+        "duplicates_removed": 0,
+        "missing_filled": 0,
+    }
+
     print(f"Original shape: {df.shape}")
 
     print("\nStandardizing column names...")
@@ -261,24 +249,22 @@ def clean_data(filepath):
     if not column_types:
         print("Skipping AI type conversion, using pandas defaults...")
     else:
-        print(f"AI classified columns as: {column_types}")
-        print(f"AI detected date formats: {date_formats}")
         df = apply_column_types(df, column_types, date_formats)
 
     print("\nDropping duplicates...")
+    before_dedup = len(df)
     df = drop_duplicates(df)
+    stats["duplicates_removed"] = before_dedup - len(df)
 
     print("\nHandling missing values...")
+    before_missing = int(df.isnull().sum().sum())
     df = handle_missing_values(df)
+    stats["missing_filled"] = before_missing
 
-    print("\nRemoving outliers...")
-    df = remove_outliers(df)
+    stats["cleaned_rows"] = df.shape[0]
+    stats["cleaned_cols"] = df.shape[1]
+    stats["cleaned_missing"] = int(df.isnull().sum().sum())
 
     print(f"\nCleaned shape: {df.shape}")
     print("Cleaning complete.")
-    return df
-
-
-# if __name__ == "__main__":
-#     df = clean_data("./example-datasets/superstore_sales_dataset.csv")
-#     print(df.head())
+    return df, stats

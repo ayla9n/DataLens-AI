@@ -2,3 +2,5 @@ pandas
 numpy 
 dotenv
 groq
+streamlit
+plotly

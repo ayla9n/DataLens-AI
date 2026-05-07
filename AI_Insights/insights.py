@@ -1,78 +1,65 @@
 import pandas as pd
-import numpy as np 
+import numpy as np
 from groq import Groq
 import json
 import os
 from dotenv import load_dotenv
+import streamlit as st
 
 load_dotenv()
+api_key_ = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+client = Groq(api_key=api_key_)
+
 
 DOMAIN_PROMPTS = {
     "Sales & Revenue": """
-        You are a senior sales analyst. Focus on:
-        - Revenue trends over time and across regions/segments
+        You are a sales analyst. Focus on:
+        - Revenue trends over time and across regions or segments
         - Top and bottom performing products or categories
-        - Seasonal patterns in sales data
-        - Actionable recommendations for improving sales performance
+        - Customer purchasing patterns and seasonal trends
+        - Actionable recommendations to improve sales performance
+    """,
+
+    "Marketing & Campaigns": """
+        You are a marketing analyst. Focus on:
+        - Campaign performance and return on spend
+        - Which channels or audiences are driving the most value
+        - Conversion and engagement trends over time
+        - Practical recommendations to optimize future campaigns
     """,
 
     "Finance & Accounting": """
         You are a financial analyst. Focus on:
         - Key financial metrics and what they indicate
-        - Cost patterns and areas of concern
-        - Period over period comparisons
-        - Risk indicators or anomalies in the numbers
-    """,
-
-    "Marketing & Campaigns": """
-        You are a marketing analyst. Focus on:
-        - Campaign performance and ROI patterns
-        - Audience segments that respond best
-        - Conversion and engagement trends over time
-        - Recommendations for optimizing future campaigns
-    """,
-
-    "Personal Finance": """
-        You are a personal finance advisor. Focus on:
-        - Total spending and average monthly breakdown
-        - Top spending categories and how they trend over time
-        - Unusual spikes or patterns worth flagging
-        - Practical budget recommendations grounded in the numbers
-    """,
-
-    "General / Other": """
-        You are a senior data analyst. Focus on:
-        - Key patterns and trends in the data
-        - Notable statistical findings
-        - Relationships between variables
-        - Actionable recommendations based on the data
+        - Expense patterns and areas where costs are growing
+        - Period over period comparisons to track financial health
+        - Actionable recommendations grounded in the actual numbers
     """
 }
 
+
+
 def build_data_summary(df):
     '''
-    Creates data summary dictonary to feed into the AI inorder to gather dataset insigts
-    Returns Dictionary with statistical and numerical summaries
+    Creates data summary dictionary to feed into the AI
+    Returns dictionary with statistical and numerical summaries
     '''
     summary = {}
 
     summary["shape"] = {"rows": df.shape[0], "columns": df.shape[1]}
-
     summary["columns"] = {col: str(dtype) for col, dtype in df.dtypes.items()}
 
     # Statistical summary for numeric columns
-    numeric_summary = df.describe().round(2).to_dict()
-    summary["numeric_stats"] = numeric_summary
+    summary["numeric_stats"] = df.describe().round(2).to_dict()
 
-    # For categorical columns- displays the top 3 most frequent values
+    # Top 3 most frequent values for categorical columns
     summary["categorical_summary"] = {}
     for col in df.select_dtypes(include=["category", "object"]).columns:
         top_values = df[col].value_counts().head(3).to_dict()
         summary["categorical_summary"][col] = top_values
 
-    # Date range for any datetime columns
+    # Date range for datetime columns
     summary["date_ranges"] = {}
     for col in df.select_dtypes(include="datetime").columns:
         summary["date_ranges"][col] = {
@@ -80,66 +67,116 @@ def build_data_summary(df):
             "max": str(df[col].max())
         }
 
-    # sample of rows from dataset so AI understands the data structure
     summary["sample_rows"] = df.head(5).to_dict(orient="records")
 
     return summary
 
 
-def generate_insights(df, domain="General / Other"):
+def generate_dataset_description(df, domain="Sales & Revenue"):
     '''
-    AI generates insights based on sample data and data summary dictionary 
-    Returns insights string
+    Creates a short summary of the dataset and suggests the best domain
+    Returns dict with description, domain, and domain_reason
+    '''
+    sample = df.head(3).to_dict(orient="records")
+    columns = list(df.columns)
+    domains = list(DOMAIN_PROMPTS.keys())
+
+    prompt = f"""
+    You are a data analyst.
+    Look at these column names and sample rows from a dataset.
+    
+    Columns: {columns}
+    Sample rows: {json.dumps(sample, default=str)}
+    Available domains: {domains}
+    
+    Return ONLY a valid JSON object, no explanation, no markdown:
+    {{
+        "description": "One sentence describing what this dataset is about, mentioning key metrics and time period if visible.",
+        "domain": "Sales & Revenue",
+        "domain_reason": "Brief reason why this domain was selected"
+    }}
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2
+        )
+
+        raw = response.choices[0].message.content.strip()
+        raw = raw.replace("```json", "").replace("```", "")
+        result = json.loads(raw)
+
+
+        suggested = result.get("domain", "Sales & Revenue")
+        if suggested not in DOMAIN_PROMPTS:
+            suggested = "Sales & Revenue"
+
+        return {
+            "description": result.get("description", "Dataset loaded successfully."),
+            "domain": suggested,
+            "domain_reason": result.get("domain_reason", "")
+        }
+
+    except Exception as e:
+        print(f"Error generating description: {e}")
+        return {
+            "description": "Dataset loaded successfully.",
+            "domain": "Sales & Revenue",
+            "domain_reason": ""
+        }
+
+
+
+def generate_insights(df, domain="Sales & Revenue"):
+    '''
+    Generates AI insights tailored to the selected domain
+    Returns formatted markdown string
     '''
     print("Building data summary...")
     summary = build_data_summary(df)
-
-    # Get the domain specific instructions
-    # general/ other is default domain
-    domain_context = DOMAIN_PROMPTS.get(domain, DOMAIN_PROMPTS["General / Other"])
+    domain_context = DOMAIN_PROMPTS.get(domain, DOMAIN_PROMPTS["Sales & Revenue"])
 
     prompt = f"""
     {domain_context}
-    You are a senior data analyst presenting findings to a mixed audience 
-    of business stakeholders and analysts.
     
-    Analyze this dataset summary and provide insights in the following structure:
+    Analyze this dataset summary and provide insights in the following structure.
+    Use ### for each section heading.
     
-    1. DATASET OVERVIEW
-       - What this dataset appears to be about
+    ### Dataset Overview
+       - What this dataset is about
        - Key dimensions (time period, categories, scale)
     
-    2. STATISTICAL HIGHLIGHTS
+    ### Statistical Highlights
        - Key statistics worth noting (averages, ranges, distributions)
-       - Any statistically interesting patterns in the numbers
+       - Interesting patterns in the numbers
     
-    3. TRENDS & PATTERNS
+    ### Trends & Patterns
        - Notable trends across time, categories, or segments
        - Relationships between variables worth highlighting
     
-    4. RECOMMENDATIONS
+    ### Recommendations
        - 2-3 actionable suggestions based on the data
        - Keep these practical and grounded in the numbers
     
     Writing style:
-    - Mix plain English explanations with specific numbers
+    - Mix plain English with specific numbers
     - Bold key findings using **bold**
-    - Keep each section concise — 3 to 5 bullet points max
-    - Avoid jargon where possible but don't oversimplify
+    - Keep each section to 3-5 bullet points max
+    - Clear and practical, avoid unnecessary jargon
     
     Dataset Summary:
     {json.dumps(summary, indent=2, default=str)}
     """
 
     try:
-        print("Generating insights with AI...")
+        print(f"Generating insights for domain: {domain}...")
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.3 
-            #lowring temp allows model to be more factual 
+            temperature=0.3
         )
-
         insights = response.choices[0].message.content.strip()
         print("Insights generated successfully.")
         return insights
@@ -149,34 +186,103 @@ def generate_insights(df, domain="General / Other"):
         return None
 
 
-def generate_dataset_description(df, domain="General / Other"):
+
+def generate_chart_recommendations(df, domain="Sales & Revenue"):
     '''
-    Creates a short summary of the dataset 
-    returns AI generated data summary string
+    Gets AI chart recommendations and validates column names exist
+    Returns filtered dict of valid chart recommendations
     '''
-    sample = df.head(3).to_dict(orient="records")
-    columns = list(df.columns)
+    summary = build_data_summary(df)
+    domain_context = DOMAIN_PROMPTS.get(domain, DOMAIN_PROMPTS["Sales & Revenue"])
+    column_types = {col: str(dtype) for col, dtype in df.dtypes.items()}
+    exact_columns = list(df.columns)
 
     prompt = f"""
-    You are analyzing a {domain} dataset.
-    Look at these column names and sample rows.
-    Write ONE sentence describing what this dataset is about.
-    Be specific — mention the domain, key metrics, and time period if visible.
-    No preamble, just the sentence.
+    You are a data visualization expert.
     
-    Columns: {columns}
-    Sample rows: {json.dumps(sample, default=str)}
+    {domain_context}
+    
+    CRITICAL RULES:
+    - You MUST only use column names from this exact list: {exact_columns}
+    - Do NOT invent column names like "count of X" or "frequency of Y"
+    - If you want to show counts of a category, use bar_chart with x as
+      the category column and y as an existing numeric column
+    - Only recommend charts that are genuinely useful for this data
+    - Quality over quantity — if 2 charts tell the story well, recommend 2
+    
+    Available chart types:
+    - "line_chart": x (datetime col), y (numeric col) — trends over time
+    - "bar_chart": x (category col), y (numeric col) — comparing categories
+    - "histogram": x (numeric col, no y needed) — distribution of values
+    - "scatter_plot": x (numeric col), y (numeric col) — relationships
+    - "pie_chart": x (category col), y (numeric col) — % composition
+    - "heatmap": no x or y needed — correlations between numeric columns
+    
+    Exact column names and types you MUST use:
+    {json.dumps(column_types, indent=2)}
+    
+    Dataset summary:
+    {json.dumps(summary, indent=2, default=str)}
+    
+    Return ONLY valid JSON, no explanation, no markdown:
+    {{
+        "charts": [
+            {{
+                "type": "bar_chart",
+                "x": "channel",
+                "y": "revenue_generated",
+                "title": "Revenue by Channel",
+                "reason": "Compares revenue generated across different channels",
+                "takeaway": [
+                    "Social Media drives the highest revenue by a significant margin",
+                    "Flyer and Paid Search contribute the least"
+                ]
+            }}
+        ]
+    }}
+    
+    For each chart include 1-2 important takeaway points that explain what the chart shows in plain English. Keep each point to one sentence, and make it short and straightfoward. Write for someone who may not be familiar with data analysis.
     """
 
     try:
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.2
+            temperature=0.1
         )
-        return response.choices[0].message.content.strip()
+
+        raw = response.choices[0].message.content.strip()
+        raw = raw.replace("```json", "").replace("```", "")
+        result = json.loads(raw)
+
+        # Filter out any charts with columns that don't exist
+        valid_charts = []
+        for chart in result.get("charts", []):
+            x = chart.get("x")
+            y = chart.get("y")
+            chart_type = chart.get("type")
+
+            if chart_type == "heatmap":
+                valid_charts.append(chart)
+                continue
+
+            if chart_type == "histogram" and x in df.columns:
+                valid_charts.append(chart)
+                continue
+
+            if x in df.columns and (y is None or y in df.columns):
+                valid_charts.append(chart)
+            else:
+                print(f"Filtered invalid chart: {chart.get('title')}")
+
+        result["charts"] = valid_charts
+        print(f"Valid chart recommendations: {result}")
+        return result
+
+    except json.JSONDecodeError:
+        print("Warning: Could not parse chart recommendations as JSON.")
+        return {}
 
     except Exception as e:
-        print(f"Error generating description: {e}")
-        return "Dataset loaded successfully."
-
+        print(f"Warning: Chart recommendation failed: {e}")
+        return {}

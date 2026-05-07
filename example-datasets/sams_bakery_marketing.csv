@@ -1,0 +1,21 @@
+Campaign ID,Campaign Name,Start Date,End Date,Channel,Budget,Amount Spent,Impressions,Clicks,Conversions,Revenue Generated,Cost Per Click,Conversion Rate,ROI,Target Audience,Status
+CMP-001,January New Year Special,01/01/2023,07/01/2023,Social Media,500.00,480.00,12400,620,85,1240.00,0.77,13.71,158.33,All Customers,Completed
+CMP-002,Valentines Cake Promo,01/02/2023,14/02/2023,Email,300.00,295.00,8500,410,62,980.00,0.72,15.12,232.20,Existing Customers,Completed
+CMP-003,Valentines Cake Promo,01/02/2023,14/02/2023,Email,300.00,295.00,8500,410,62,980.00,0.72,15.12,232.20,Existing Customers,Completed
+CMP-004,Spring Sourdough Launch,15/03/2023,31/03/2023,Social Media,600.00,580.00,15200,780,95,1480.00,0.74,12.18,155.17,New Customers,Completed
+CMP-005,Easter Bakes Special,01/04/2023,09/04/2023,Flyer,200.00,195.00,5000,180,42,630.00,1.08,23.33,223.08,Local Area,Completed
+CMP-006,Spring Sourdough Launch,15/03/2023,31/03/2023,Social Media,600.00,580.00,15200,780,95,1480.00,0.74,12.18,155.17,New Customers,Completed
+CMP-007,Mothers Day Cake Campaign,05/05/2023,14/05/2023,Social Media,800.00,775.00,22000,1100,180,3200.00,0.70,16.36,312.90,All Customers,Completed
+CMP-008,Summer Pastry Deals,01/06/2023,30/06/2023,Email,400.00,385.00,10200,520,78,1150.00,0.74,15.00,198.70,Existing Customers,Completed
+CMP-009,Local Food Festival Sponsorship,15/06/2023,18/06/2023,Event,1000.00,1000.00,8000,0,220,4800.00,,27.50,380.00,Local Area,Completed
+CMP-010,Summer Social Campaign,01/07/2023,31/07/2023,Social Media,700.00,680.00,18500,920,130,2100.00,0.74,14.13,208.82,All Customers,Completed
+CMP-011,Back to School Lunch Boxes,01/08/2023,31/08/2023,Flyer,250.00,240.00,6000,210,55,820.00,1.14,26.19,241.67,Parents,Completed
+CMP-012,Autumn Loaf Promotion,01/09/2023,30/09/2023,Email,350.00,330.00,9400,480,72,1080.00,0.69,15.00,227.27,Existing Customers,Completed
+CMP-013,Halloween Treats Campaign,20/10/2023,31/10/2023,Social Media,600.00,590.00,16800,840,125,2200.00,0.70,14.88,272.88,All Customers,Completed
+CMP-014,Halloween Treats Campaign,20/10/2023,31/10/2023,Social Media,600.00,590.00,16800,840,125,2200.00,0.70,14.88,272.88,All Customers,Completed
+CMP-015,Christmas Early Bird Cakes,01/11/2023,15/11/2023,Email,500.00,490.00,13500,680,110,2800.00,0.72,16.18,471.43,Existing Customers,Completed
+CMP-016,Christmas Gifting Campaign,16/11/2023,10/12/2023,Social Media,1200.00,1180.00,35000,1800,320,8500.00,0.66,17.78,620.34,All Customers,Completed
+CMP-017,Christmas Gifting Campaign,16/11/2023,10/12/2023,Social Media,1200.00,1180.00,35000,1800,320,8500.00,0.66,17.78,620.34,All Customers,Completed
+CMP-018,New Year Countdown Sale,20/12/2023,31/12/2023,Social Media,800.00,780.00,24000,1200,195,4200.00,0.65,16.25,438.46,All Customers,Completed
+CMP-019,Wholesale Partner Outreach,01/09/2023,30/09/2023,Email,,320.00,4200,380,48,3800.00,0.84,12.63,,Wholesale,Completed
+CMP-020,Google Ads Trial,01/10/2023,31/10/2023,Paid Search,450.00,445.00,28000,980,88,1650.00,0.45,8.98,270.79,New Customers,Completed
