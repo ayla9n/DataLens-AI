@@ -7,9 +7,13 @@ from dotenv import load_dotenv
 import streamlit as st
 
 load_dotenv()
-api_key_ = st.secrets.get("GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
+def get_secret(key):
+    try:
+        return st.secrets[key]
+    except:
+        return os.getenv(key)
 
-client = Groq(api_key=api_key_)
+client = Groq(api_key=get_secret("GROQ_API_KEY"))
 
 
 DOMAIN_PROMPTS = {
