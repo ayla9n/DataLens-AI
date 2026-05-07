@@ -1,6 +1,7 @@
 pandas
-numpy 
-dotenv
-genai
+numpy
+python-dotenv
+google-genai
+groq
 streamlit
 plotly
