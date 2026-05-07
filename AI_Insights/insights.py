@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from groq import Groq
+from google import genai
 import json
 import os
 from dotenv import load_dotenv
@@ -13,8 +13,32 @@ def get_secret(key):
     except:
         return os.getenv(key)
 
-client = Groq(api_key=get_secret("GROQ_API_KEY"))
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+def call_gemini(prompt, temperature=0.3):
+    models = [
+        "gemini-3-flash-preview", # primary
+        "gemini-2.5-flash",      # fallback
+    ]
+
+    for model in models:
+        try:
+            response = client.models.generate_content(
+                model=model,
+                contents=prompt,
+                config={"temperature": temperature}
+            )
+            print(f"Used model: {model}")
+            return response.text.strip()
+
+        except Exception as e:
+            if "429" in str(e) or "quota" in str(e).lower():
+                print(f"Rate limit hit on {model}, trying next...")
+                continue
+            else:
+                raise e
+
+    raise Exception("All models rate limited — try again later")
 
 DOMAIN_PROMPTS = {
     "Sales & Revenue": """
@@ -102,13 +126,7 @@ def generate_dataset_description(df, domain="Sales & Revenue"):
     """
 
     try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2
-        )
-
-        raw = response.choices[0].message.content.strip()
+        raw = call_gemini(prompt, temperature=0.2)
         raw = raw.replace("```json", "").replace("```", "")
         result = json.loads(raw)
 
@@ -175,13 +193,7 @@ def generate_insights(df, domain="Sales & Revenue"):
     """
 
     try:
-        print(f"Generating insights for domain: {domain}...")
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
-        )
-        insights = response.choices[0].message.content.strip()
+        insights = call_gemini(prompt, temperature=0.3)
         print("Insights generated successfully.")
         return insights
 
@@ -212,7 +224,7 @@ def generate_chart_recommendations(df, domain="Sales & Revenue"):
     - If you want to show counts of a category, use bar_chart with x as
       the category column and y as an existing numeric column
     - Only recommend charts that are genuinely useful for this data
-    - Quality over quantity — if 2 charts tell the story well, recommend 2
+    - Quality over quantity — recommend 4 charts MAX
     
     Available chart types:
     - "line_chart": x (datetime col), y (numeric col) — trends over time
@@ -249,13 +261,7 @@ def generate_chart_recommendations(df, domain="Sales & Revenue"):
     """
 
     try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1
-        )
-
-        raw = response.choices[0].message.content.strip()
+        raw = call_gemini(prompt, temperature=0.1)
         raw = raw.replace("```json", "").replace("```", "")
         result = json.loads(raw)
 

@@ -16,7 +16,7 @@ DataLens AI is a lightweight data insights tool built for small businesses. Uplo
 ### Tech Stack
 
 - **Streamlit** — dashboard
-- **Groq API (LLaMA 3.3)** — AI insights and chart recommendations
+- **Google Gemini API** — AI insights and chart recommendations
 - **Pandas and Numpy** — data cleaning
 - **Plotly** — charts
 

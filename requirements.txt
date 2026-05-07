@@ -1,6 +1,6 @@
 pandas
 numpy 
 dotenv
-groq
+genai
 streamlit
 plotly

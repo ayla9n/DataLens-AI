@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from groq import Groq
+from google import genai
 import json
 import os
 import streamlit as st
@@ -14,7 +14,33 @@ def get_secret(key):
     except:
         return os.getenv(key)
 
-client = Groq(api_key=get_secret("GROQ_API_KEY"))
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+def call_gemini(prompt, temperature=0.3):
+    models = [
+        "gemini-3-flash-preview", # primary
+        "gemini-2.5-flash",      # fallback
+    ]
+
+    for model in models:
+        try:
+            response = client.models.generate_content(
+                model=model,
+                contents=prompt,
+                config={"temperature": temperature}
+            )
+            print(f"Used model: {model}")
+            return response.text.strip()
+
+        except Exception as e:
+            if "429" in str(e) or "quota" in str(e).lower():
+                print(f"Rate limit hit on {model}, trying next...")
+                continue
+            else:
+                raise e
+
+    raise Exception("All models rate limited — try again later")
+
 
 
 def standardize_columns(df):
@@ -90,12 +116,7 @@ def detect_column_types(df):
     """
 
     try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}]
-        )
-
-        raw = response.choices[0].message.content.strip()
+        raw = call_gemini(prompt)
         raw = raw.replace("```json", "").replace("```", "")
         result = json.loads(raw)
 
