@@ -9,7 +9,7 @@ Web App Link : []() [DataLens-AI](https://data-lens-ai.streamlit.app/)
 ### Features
 
 - **Automated data cleaning pipeline** — detects and fixes missing values, removes duplicates, and  classifies column types using AI
-- **AI-generated insights** — produces simple trends, patterns, and recommendations tailored to the dataset type using Groq's LLaMA 3.3
+- **AI-generated insights** — produces simple trends, patterns, and recommendations tailored to the dataset type using Google Gemini API
 - **Smart chart recommendations** — AI analyzes the dataset and selects the most relevant visualizations, complete with simple takeaways for each chart
 - **Export ready** — download the cleaned dataset as a CSV 
 
