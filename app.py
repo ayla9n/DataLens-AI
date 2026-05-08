@@ -153,7 +153,7 @@ with st.sidebar:
         run_button = False  
 
     st.divider()
-    st.caption("Built with Google Gemini API + Streamlit")
+    st.caption("Built with Gemini AI + Streamlit")
 
 
 
