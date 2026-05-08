@@ -83,7 +83,7 @@ def create_line_chart(df, x, y, title):
 
 def create_bar_chart(df, x, y, title):
     '''
-    creates and returnd bar chart
+    creates and returns bar chart
     '''
     df_grouped = df.groupby(x)[y].sum().reset_index()
     df_grouped = df_grouped.sort_values(by=y, ascending=False)

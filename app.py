@@ -94,11 +94,11 @@ SAMPLE_DATASETS = {
         "name": "sams_bakery_marketing.csv",
         "domain": "Marketing & Campaigns"
     },
-    "finance": {
-        "path": "./example-datasets/sams_bakery_finance.csv",
-        "name": "sams_bakery_finance.csv",
-        "domain": "Finance & Accounting"
-    }
+    "ecommerce": {
+        "path": "./example-datasets/ecommerce_product_dataset.csv",
+        "name": "ecommerce_product_dataset.csv",
+        "domain": "Sales & Revenue"
+    },
 }
 
 
@@ -178,34 +178,31 @@ if not uploaded_file and not st.session_state.sample:
 
     st.subheader("🧁 Try a Sample Dataset")
     st.markdown(
-    "Not sure where to start? Load one of "
-    "<span style='color:#FF6B8A; font-weight:600;'>Sam's Bakery</span>"
-    " datasets to explore the app.",
+    "Not sure where to start? Load one of these datasets to explore the app.",
     unsafe_allow_html=True)
 
     s1, s2, s3 = st.columns(3)
 
     with s1:
-        st.markdown("**Sales & Revenue**")
+        st.markdown("**E-commerce Sales**")
+        st.caption("1000 orders — products, regions, rating, and revenue")
+        if st.button("Load E-commerce Dataset", width="stretch"):
+            st.session_state.sample = "ecommerce"
+            st.rerun()
+        
+    with s2:
+        st.markdown("**Sam's Bakery Sales**")
         st.caption("140 orders across 12 months — products, regions, customers and revenue")
         if st.button("Load Sales Dataset", width="stretch"):
             st.session_state.sample = "sales"
             st.rerun()
 
-    with s2:
-        st.markdown("**Marketing & Campaigns**")
+    with s3:
+        st.markdown("**Sam's Bakery Marketing**")
         st.caption("20 campaigns across email, social, events and paid search")
         if st.button("Load Marketing Dataset", width="stretch"):
             st.session_state.sample = "marketing"
             st.rerun()
-
-    with s3:
-        st.markdown("**Finance & Accounting**")
-        st.caption("Monthly P&L with revenue, expenses, profit and capital entries")
-        if st.button("Load Finance Dataset", width="stretch"):
-            st.session_state.sample = "finance"
-            st.rerun()
-
 
 
 # MAIN DASHBOARD 

@@ -62,7 +62,7 @@ def standardize_columns(df):
 
 def detect_column_types(df):
     '''
-    Sends column names and sample values to Groq AI
+    Sends column names and sample values to Gemini AI
     Returns column classifications and date formats for datetime columns
     '''
     column_info = {}
