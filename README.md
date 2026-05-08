@@ -4,18 +4,18 @@ DataLens AI is a lightweight data insights tool built for small businesses. Uplo
 
 [Live Demo](https://data-lens-ai.streamlit.app/) 
 
-![Data Cleaning](assets/clean_data.png)
-![AI Insights](assets/insights.png)
-![Charts](assets/charts.png)
-
 ---
 
 #### Features
 
-- **Automated data cleaning pipeline** — detects and fixes missing values, removes duplicates, and  classifies column types using AI
+- **Automated data cleaning pipeline** — detects and fixes missing values, removes duplicates, and  classifies column types using AI (- **Export ready** — download the cleaned dataset as a CSV )
+<img src="assets/clean_data.png" width="400"/>
+
 - **AI-generated insights** — produces simple trends, patterns, and recommendations tailored to the dataset type using Google Gemini API
+<img src="assets/insights.png" width="400"/>
+
 - **Smart chart recommendations** — AI analyzes the dataset and selects the most relevant visualizations, complete with simple takeaways for each chart
-- **Export ready** — download the cleaned dataset as a CSV 
+<img src="assets/charts.png" width="400"/>
 
 ---
 
