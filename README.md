@@ -19,16 +19,17 @@ DataLens AI is a lightweight data insights tool built for small businesses. Uplo
 
 ---
 
-#### Tech Stack
+#### Tools Used
 
-- **Streamlit** — dashboard
-- **Google Gemini API** — AI insights and chart recommendations
-- **Pandas & NumPy** — data cleaning
-- **Plotly** — interactive charts
+- **Python** — core programming language  
+- **Streamlit** — dashboard interface  
+- **Google Gemini API** — AI insights and chart recommendations  
+- **Pandas & NumPy** — data cleaning and processing  
+- **Plotly** — interactive charts  
 
 ---
 
-#### Try It With Sample Data
+#### Test Program With Sample Data
 
 Not sure where to start? The app comes with three sample datasets — just click to load, no upload needed.
 
